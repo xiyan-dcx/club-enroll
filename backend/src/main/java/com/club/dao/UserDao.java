@@ -5,7 +5,6 @@ import com.club.util.DbUtil;
 
 import java.sql.*;
 
-import static sun.awt.image.MultiResolutionCachedImage.map;
 
 //用户表DAO：登陆查询 + 注册插入 + 用户名查重
 public class UserDao {
