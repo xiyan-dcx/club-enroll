@@ -1,39 +1,132 @@
-<script setup>
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import WorkspaceLayout from '../../components/WorkspaceLayout.vue'
-import { useLoad } from '../../composables/useLoad'
-import { pending, review } from '../../api/enrollment'
-const query = reactive({page:1,size:10})
-const { data, loading, error, load } = useLoad(() => pending(query), {records:[],total:0})
-const selected = ref(null)
-const remark = ref('')
-const action = ref('pass')
-const saving = ref(false)
-async function submit() {
-  if (remark.value.trim().length < 5) return ElMessage.warning('审核意见至少 5 个字')
-  saving.value = true
-  try { await review({id:selected.value.id,action:action.value,remark:remark.value.trim()}); selected.value = null; ElMessage.success('审核完成'); await load() }
-  catch { /* 请求封装显示错误 */ }
-  finally { saving.value = false }
-}
-onMounted(load)
-</script>
 <template>
-  <WorkspaceLayout title="报名审批" admin>
-    <el-button @click="load" :loading="loading">刷新待审列表</el-button>
-    <el-alert v-if="error" :title="error" type="error" :closable="false" />
-    <el-table :data="data.records" v-loading="loading" empty-text="暂无待审报名">
-      <el-table-column prop="studentName" label="学生" /><el-table-column prop="clubName" label="社团" /><el-table-column prop="reason" label="报名理由" min-width="220" /><el-table-column prop="applyTime" label="申请时间" min-width="180" />
-      <el-table-column label="操作"><template #default="{row}"><el-button @click="selected=row; remark=''; action='pass'">审核</el-button></template></el-table-column>
-    </el-table>
-    <el-pagination v-model:current-page="query.page" :page-size="query.size" :total="data.total" layout="prev, pager, next" @current-change="load" />
-    <el-dialog :model-value="!!selected" @close="selected=null" title="审核报名" width="min(520px,95vw)">
-      <el-form @submit.prevent="submit" label-position="top">
-        <el-form-item label="审核结果"><el-radio-group v-model="action"><el-radio value="pass">通过</el-radio><el-radio value="reject">拒绝</el-radio></el-radio-group></el-form-item>
-        <el-form-item label="审核意见（至少 5 个字）"><el-input v-model="remark" type="textarea" maxlength="200" /></el-form-item>
-        <el-button type="primary" native-type="submit" :loading="saving">确认审核</el-button>
-      </el-form>
-    </el-dialog>
-  </WorkspaceLayout>
+  <AdminLayout>
+    <div class="p-6 lg:p-10">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">报名审批</h1>
+          <p class="text-sm text-[var(--text-secondary)] mt-1">
+            待审批
+            <el-tag type="warning" class="!mx-1" round>{{ list.length }}</el-tag>
+            条
+          </p>
+        </div>
+        <el-button @click="loadList">
+          <el-icon class="mr-1"><Refresh /></el-icon>
+          刷新
+        </el-button>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-md border border-[#F2EAE0]">
+        <el-table :data="list" v-loading="loading" stripe>
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column label="学生" min-width="160">
+            <template #default="{ row }">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full brand-mint flex items-center justify-center text-white text-sm font-bold">              
+		  {{ (row.realName || row.username || 'S').charAt(0)}}		  
+                </div>		   
+                <div>
+                  <div class="font-semibold">{{ row.realName || row.username }}</div>
+                  <div class="text-xs text-[var(--text-secondary)]">{{ row.phone || '—' }}</div>
+                </div>
+
+
+		<!--  因为json数据中没有realName，而是studentName
+		<div class="w-10 h-10 rounded-full brand-mint flex items-center justify-center text-white text-sm font-bold">              
+		  {{ row.studentName }}		  
+                </div>		   
+                
+		-->
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="clubName" label="申请社团" min-width="180" show-overflow-tooltip />
+          <el-table-column label="申请理由" min-width="240" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="text-[var(--text-secondary)]">{{ row.reason || '（未填写）' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="applyTime" label="申请时间" width="180" />
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" type="success" @click="review(row, 'pass')">
+                通过
+              </el-button>
+              <el-button size="small" type="danger" @click="review(row, 'reject')">
+                拒绝
+              </el-button>
+            </template>
+          </el-table-column>
+          <template #empty>
+            <div class="py-10 text-[var(--text-secondary)]">
+              暂无待审批的报名 🎉
+            </div>
+          </template>
+        </el-table>
+      </div>
+    </div>
+  </AdminLayout>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
+import AdminLayout from './AdminLayout.vue'
+import api from '@/utils/api'
+
+const list = ref([])
+const loading = ref(false)
+
+async function loadList() {
+  loading.value = true
+  try {
+    const res = await api.get('/enrollment/pending')
+    // 后端 EnrollmentService.pending() 返回的是分页 Map(records/total/page/size),
+    // records 才是真正的数组,直接取 res.data 会把 Map 喂给 el-table 导致渲染异常。
+    list.value = res.data?.records || []
+  } finally {
+    loading.value = false
+  }
+}
+
+async function review(row, decision) {
+  const passing = decision === 'pass'
+
+  /*
+
+      passing
+        ? `通过 「${row.studentName || row.username}」 报名「${row.clubName}」?可填写欢迎话。`
+        : `拒绝 「${row.studentName || row.username}」 报名「${row.clubName}」?请填写原因。`
+  */
+  try {
+    const { value: remark } = await ElMessageBox.prompt(
+      passing
+        ? `通过 ${row.realName || row.username} 报名「${row.clubName}」?可填写欢迎话。`
+        : `拒绝 ${row.realName || row.username} 报名「${row.clubName}」?请填写原因。`,
+      passing ? '通过申请' : '拒绝申请',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputValue: passing ? '欢迎加入社团!' : '',
+        inputValidator: (val) => {
+          if (!passing && (!val || !val.trim())) return '拒绝理由必填'
+          return true
+        },
+        type: passing ? 'success' : 'warning',
+      }
+    )
+    await api.post('/enrollment/review', {
+      enrollmentId: row.id,
+      decision,
+      remark: (remark || '').trim(),
+    })
+    ElMessage.success(passing ? '已通过' : '已拒绝')
+    loadList()
+  } catch (_) {
+    /* user cancelled */
+  }
+}
+
+onMounted(loadList)
+</script>

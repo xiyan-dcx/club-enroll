@@ -1,48 +1,174 @@
-<script setup>
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import WorkspaceLayout from '../../components/WorkspaceLayout.vue'
-import { useLoad } from '../../composables/useLoad'
-import { listClub, createClub, updateClub, deactivateClub } from '../../api/club'
-const query = reactive({ keyword:'', page:1, size:10 })
-const { data, loading, error, load } = useLoad(() => listClub(query), {records:[],total:0})
-const form = ref({})
-const editing = ref(false)
-const saving = ref(false)
-function edit(row) { form.value = row ? {...row} : {name:'',category:'学术',intro:'',leader:'',maxMembers:30,isActive:1}; editing.value = true }
-async function save() {
-  if (!form.value.name.trim() || !form.value.leader.trim()) return ElMessage.warning('请填写社团名和负责人')
-  saving.value = true
-  try { await (form.value.id ? updateClub(form.value) : createClub(form.value)); editing.value = false; ElMessage.success('已保存'); await load() }
-  catch { /* 请求封装显示错误 */ }
-  finally { saving.value = false }
-}
-async function deactivate(row) {
-  try { await ElMessageBox.confirm(`确定下架“${row.name}”？`, '下架社团', {type:'warning'}); await deactivateClub(row.id); ElMessage.success('已下架'); await load() }
-  catch { /* 取消操作或请求错误 */ }
-}
-onMounted(load)
-</script>
 <template>
-  <WorkspaceLayout title="社团管理" admin>
-    <el-form inline class="toolbar" @submit.prevent="query.page=1; load()"><el-input v-model="query.keyword" placeholder="社团名称" clearable aria-label="社团名称" /><el-button native-type="submit">搜索</el-button><el-button type="primary" @click="edit()">新增社团</el-button></el-form>
-    <el-alert v-if="error" :title="error" type="error" :closable="false" />
-    <el-table :data="data.records" v-loading="loading" empty-text="暂无社团">
-      <el-table-column prop="name" label="社团" /><el-table-column prop="category" label="分类" /><el-table-column prop="leader" label="负责人" />
-      <el-table-column label="人数"><template #default="{row}">{{ row.currentMembers }}/{{ row.maxMembers }}</template></el-table-column>
-      <el-table-column label="状态"><template #default="{row}">{{ row.isActive === 1 ? '招新中' : '已下架' }}</template></el-table-column>
-      <el-table-column label="操作" width="180"><template #default="{row}"><el-button size="small" @click="edit(row)">编辑</el-button><el-button size="small" type="danger" :disabled="row.isActive !== 1" @click="deactivate(row)">下架</el-button></template></el-table-column>
-    </el-table>
-    <el-pagination v-model:current-page="query.page" :page-size="query.size" :total="data.total" layout="prev, pager, next" @current-change="load" />
-    <el-dialog v-model="editing" :title="form.id ? '编辑社团' : '新增社团'" width="min(560px, 95vw)">
-      <el-form label-position="top" @submit.prevent="save">
-        <el-form-item label="社团名称" required><el-input v-model="form.name" maxlength="64" /></el-form-item>
-        <el-form-item label="分类"><el-select v-model="form.category"><el-option v-for="c in ['学术','体育','文艺','公益']" :key="c" :label="c" :value="c" /></el-select></el-form-item>
-        <el-form-item label="负责人" required><el-input v-model="form.leader" maxlength="32" /></el-form-item>
-        <el-form-item label="人数上限"><el-input-number v-model="form.maxMembers" :min="Math.max(1,form.currentMembers || 0)" /></el-form-item>
-        <el-form-item label="简介"><el-input v-model="form.intro" type="textarea" maxlength="1000" /></el-form-item>
-        <el-button type="primary" native-type="submit" :loading="saving">保存</el-button>
-      </el-form>
-    </el-dialog>
-  </WorkspaceLayout>
+  <AdminLayout>
+    <div class="p-6 lg:p-10">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">社团管理</h1>
+          <p class="text-sm text-[var(--text-secondary)] mt-1">维护社团信息 · 新增、编辑、下架</p>
+        </div>
+        <el-button type="primary" size="large" @click="openAdd">
+          <el-icon class="mr-1"><Plus /></el-icon>
+          新增社团
+        </el-button>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-md border border-[#F2EAE0]">
+        <el-table :data="list" v-loading="loading" stripe>
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column label="社团名称" min-width="180">
+            <template #default="{ row }">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl brand-hero flex items-center justify-center text-white font-bold text-sm">
+                  {{ (row.name || '?').charAt(0) }}
+                </div>
+                <span class="font-medium">{{ row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="category" label="分类" width="110">
+            <template #default="{ row }">
+              <el-tag effect="plain">{{ row.category }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="leader" label="社长" width="100" />
+          <el-table-column label="人数" width="140">
+            <template #default="{ row }">
+              <span class="font-medium">{{ row.currentMembers ?? 0 }}</span>
+              <span class="text-[var(--text-secondary)]"> / {{ row.maxMembers ?? '∞' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="isActive(row)" type="success" effect="light">在线</el-tag>
+              <el-tag v-else type="info" effect="light">已下架</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="180" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" @click="openEdit(row)">编辑</el-button>
+              <el-button size="small" type="danger" :disabled="!isActive(row)" @click="remove(row)">下架</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-empty v-if="!loading && list.length === 0" description="还没有社团,点上方新增" />
+      </div>
+
+      <!-- 弹窗 -->
+      <el-dialog v-model="dialogVisible" :title="dialogMode === 'add' ? '新增社团' : '编辑社团'" width="560px">
+        <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+          <el-form-item label="社团名称" prop="name">
+            <el-input v-model="form.name" placeholder="例如:吉他社" />
+          </el-form-item>
+          <div class="grid grid-cols-2 gap-4">
+            <el-form-item label="分类" prop="category">
+              <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
+                <el-option label="学术" value="学术" />
+                <el-option label="体育" value="体育" />
+                <el-option label="文艺" value="文艺" />
+                <el-option label="公益" value="公益" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="社长" prop="leader">
+              <el-input v-model="form.leader" placeholder="负责人姓名" />
+            </el-form-item>
+          </div>
+          <el-form-item label="上限人数" prop="maxMembers">
+            <el-input-number v-model="form.maxMembers" :min="1" :max="999" />
+          </el-form-item>
+          <el-form-item label="社团简介">
+            <el-input v-model="form.intro" type="textarea" :rows="4" placeholder="一句话介绍这个社团" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submit">保存</el-button>
+        </template>
+      </el-dialog>
+    </div>
+  </AdminLayout>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
+import AdminLayout from './AdminLayout.vue'
+import api from '@/utils/api'
+
+const list = ref([])
+const loading = ref(false)
+const submitting = ref(false)
+
+const isActive = (r) => r.isActive == null ? true : !!r.isActive
+
+const dialogVisible = ref(false)
+const dialogMode = ref('add')
+const formRef = ref(null)
+const form = ref({ id: null, name: '', category: '', intro: '', leader: '', maxMembers: 30 })
+const rules = {
+  name:       [{ required: true, message: '请输入社团名称', trigger: 'blur' }],
+  category:   [{ required: true, message: '请选择分类', trigger: 'change' }],
+  leader:     [{ required: true, message: '请输入社长', trigger: 'blur' }],
+  maxMembers: [{ required: true, type: 'number', min: 1, max: 999, message: '1-999', trigger: 'blur' }],
+}
+
+async function loadList() {
+  loading.value = true
+  try {
+    const resp = await api.get('/club/list', { params: { size: 100 } })
+    const d = resp.data
+    list.value = Array.isArray(d) ? d : (d?.records || [])
+  } catch (_) {
+    list.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+function openAdd() {
+  dialogMode.value = 'add'
+  form.value = { id: null, name: '', category: '', intro: '', leader: '', maxMembers: 30 }
+  dialogVisible.value = true
+}
+
+function openEdit(row) {
+  dialogMode.value = 'edit'
+  form.value = { ...row }
+  dialogVisible.value = true
+}
+
+async function submit() {
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+  submitting.value = true
+  try {
+    if (dialogMode.value === 'add') {
+      await api.post('/club', form.value)
+      ElMessage.success('新增成功')
+    } else {
+      await api.put('/club', form.value)
+      ElMessage.success('修改成功')
+    }
+    dialogVisible.value = false
+    loadList()
+  } catch (_) { /* 拦截器已提示 */ } finally {
+    submitting.value = false
+  }
+}
+
+async function remove(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确认下架「${row.name}」?下架后学生看不到,但历史报名记录保留。`,
+      '下架确认',
+      { type: 'warning' }
+    )
+    await api.delete('/club', { params: { id: row.id } })
+    ElMessage.success('已下架')
+    loadList()
+  } catch (_) { /* cancel or already toasted */ }
+}
+
+onMounted(loadList)
+</script>
