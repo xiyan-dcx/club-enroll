@@ -18,20 +18,22 @@ api.interceptors.response.use(
       if (body.code === 0) {
         return body              // 整体返回,方便老代码用 .data 字段
       }
-      ElMessage.error(body.msg || '服务繁忙,请稍后再试')
+      ElMessage.error(body.message || body.msg || '服务繁忙,请稍后再试')
       return Promise.reject(body)
     }
     return resp
   },
   (err) => {
     const status = err.response?.status
-    const msg = err.response?.data?.msg
+    const msg = err.response?.data?.message || err.response?.data?.msg
     if (status === 401) {
       ElMessage.warning(msg || '未登录或登录已过期')
       localStorage.removeItem('user')
       router.push('/login')
     } else if (status === 403) {
       ElMessage.error(msg || '无权限访问')
+    } else if (status >= 500) {
+      ElMessage.error('服务器处理失败，请稍后重试')
     } else {
       ElMessage.error(msg || '网络错误,请稍后再试')
     }

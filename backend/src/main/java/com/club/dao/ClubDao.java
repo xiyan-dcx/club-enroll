@@ -21,22 +21,22 @@ public class ClubDao {
         if (onlyActive) {
             sb.append(" AND is_active=1 ");
         }
-        if (keyword != null && !keyword.isEmpty()) {
+        if (keyword != null && !keyword.isBlank()) {
             sb.append("AND name LIKE ? ");
             params.add("%" + keyword.trim() + "%");
         }
-        if (category != null && !category.isEmpty()) {
+        if (category != null && !category.isBlank()) {
             sb.append("AND category = ? ");
             params.add(category.trim());
         }
         sb.append("ORDER BY current_members DESC, id ASC LIMIT ? OFFSET ?");
-        params.add(offset);
         params.add(size);
+        params.add(offset);
 
         List<Club> list = new ArrayList<>();
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sb.toString())) {
-            for (int i = 1; i <= params.size(); i++) {
+            for (int i = 0; i < params.size(); i++) {
                 ps.setObject(i + 1, params.get(i));
             }
             try (ResultSet rs = ps.executeQuery()) {

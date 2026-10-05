@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+.workspace-header { display:flex; flex-wrap:wrap; align-items:center; gap:24px; padding:20px 5%; background:white; border-bottom:1px solid #f2eae0; }
+.workspace-header nav { display:flex; flex-wrap:wrap; gap:20px; flex:1; }
+.workspace-header a { color:var(--text-secondary); text-decoration:none; }
+.workspace-header .router-link-active { color:var(--brand-primary); font-weight:600; }
+.workspace-main { max-width:1180px; margin:32px auto; padding:0 24px 40px; }
+.workspace-main h1 { font-size:28px; font-weight:700; margin-bottom:24px; }
+.workspace-main h2 { font-size:20px; font-weight:600; margin:12px 0; }
+.workspace-main h3 { font-weight:600; margin-top:16px; }
+.workspace-main p { margin:12px 0; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px; margin:24px 0; }
+.toolbar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+.toolbar .el-input { width:240px; }
+.toolbar .el-select { width:160px; }
+.section-stack { display:grid; gap:20px; margin-top:20px; }
+.preserve-lines { white-space:pre-wrap; }
+.workspace-main .el-table, .workspace-main .el-alert, .workspace-main .el-pagination { margin-top:20px; }
+
 :root {
   --brand-primary:   #FF6B6B;
   --brand-primary-2: #FFB199;
