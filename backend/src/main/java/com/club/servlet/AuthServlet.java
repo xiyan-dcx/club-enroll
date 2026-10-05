@@ -4,7 +4,7 @@ import com.club.entity.User;
 import com.club.service.AuthService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
-import jakarta.servlet.ServletException;
+
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,79 +25,76 @@ import java.util.Map;
  */
 @WebServlet(name = "AuthServlet", urlPatterns = "/api/auth/*")
 public class AuthServlet extends HttpServlet {
-    
-    private final AuthService authService = new  AuthService();
-    
+
+    private final AuthService authService = new AuthService();
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String path = request.getPathInfo();
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = req.getPathInfo();
         switch (path == null ? "" : path) {
-            case "/me" -> me(request, response);
-            default -> write(response, ApiResponse.fail(404, "未知路径：" + path));
+            case "/me" -> me(req, resp);
+            default -> write(resp, ApiResponse.fail(404, "未知路径：" + path));
         }
     }
-    
+
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String path = request.getPathInfo();
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = req.getPathInfo();
         switch (path == null ? "" : path) {
-            case "/register" -> register(request,response);
-            case "/login" -> login(request,response);
-            case "login" -> logout(request,response);
-            default -> write(response,ApiResponse.fail(404,"未知路径：" + path));
+            case "/register" -> register(req, resp);
+            case "/login"    -> login(req, resp);
+            case "/logout"   -> logout(req, resp);
+            default -> write(resp, ApiResponse.fail(404, "未知路径：" + path));
         }
     }
-    
+
     @SuppressWarnings("unchecked")
-    private void register(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void register(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            Map<String,String> body = JsonUtil.fromJson(request.getReader(),Map.class);
+            Map<String, String> body = JsonUtil.fromJson(req.getReader(), Map.class);
             Long id = authService.register(
-                    body.get("username"),body.get("password"), body.get("role"),
-                    body.get("realName"),body.get("phone")
-            );
-            write(response,ApiResponse.ok(Map.of("id",id)));
-        }catch (IllegalArgumentException e) {
-            write(response,ApiResponse.fail(400,e.getMessage()));
+                    body.get("username"), body.get("password"), body.get("role"),
+                    body.get("realName"), body.get("phone"));
+            write(resp, ApiResponse.ok(Map.of("id", id)));
+        } catch (IllegalArgumentException e) {
+            write(resp, ApiResponse.fail(400, e.getMessage()));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Map<String,String> body = JsonUtil.fromJson(request.getReader(),Map.class);
-        User user = authService.login(body.get("username"), body.get("password"));
-        if(user == null){
-            write(response, ApiResponse.fail(401,"用户名或密码错误"));
+    private void login(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Map<String, String> body = JsonUtil.fromJson(req.getReader(), Map.class);
+        User u = authService.login(body.get("username"), body.get("password"));
+        if (u == null) {
+            write(resp, ApiResponse.fail(401, "用户名或密码错误"));
             return;
         }
-        //登陆后把user写入Session
-        HttpSession session = request.getSession(true);
-        session.setAttribute("user",user);
-        write(response,ApiResponse.ok(user));
+        // 登录后把 user 写入 Session
+        HttpSession session = req.getSession(true);
+        session.setAttribute("user", u);
+        write(resp, ApiResponse.ok(u));
     }
 
-    private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
-        if(session != null){
-            session.invalidate();
-        }
-        write(response,ApiResponse.ok());
+    private void logout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
+        if (session != null) session.invalidate();
+        write(resp, ApiResponse.ok());
     }
 
-    private void me(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
+    private void me(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
         Object u = session == null ? null : session.getAttribute("user");
-        if(u == null){
-            write(response, ApiResponse.fail(401,"未登录"));
+        if (u == null) {
+            write(resp, ApiResponse.fail(401, "未登录"));
             return;
         }
-        write(response, ApiResponse.ok(u));
+        write(resp, ApiResponse.ok(u));
     }
 
-    private void write(HttpServletResponse response, Object body) throws IOException {
-        response.setContentType("application/json;charset=utf-8");
-        response.setCharacterEncoding("utf-8");
-        try(PrintWriter pw = response.getWriter()){
+    private void write(HttpServletResponse resp, Object body) throws IOException {
+        resp.setContentType("application/json;charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        try (PrintWriter pw = resp.getWriter()) {
             pw.write(JsonUtil.toJson(body));
         }
     }
