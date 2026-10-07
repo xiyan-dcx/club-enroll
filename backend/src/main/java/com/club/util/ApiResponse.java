@@ -2,7 +2,7 @@ package com.club.util;
 
 /**
  * 统一响应壳：所有 Servlet 都返回这个对象的 JSON。
- * 形状：{ code, msg, data }
+ * 形状：{ code, message, data }
  */
 public class ApiResponse<T> {
 

@@ -1,0 +1,7 @@
+jdbc.url=jdbc:mysql://localhost:3306/club_enroll?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+jdbc.username=club_app
+jdbc.password=REPLACE_WITH_YOUR_PASSWORD
+jdbc.driver=com.mysql.cj.jdbc.Driver
+hikari.maximumPoolSize=10
+hikari.minimumIdle=2
+hikari.connectionTimeout=3000

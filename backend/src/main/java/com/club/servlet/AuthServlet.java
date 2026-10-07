@@ -4,6 +4,8 @@ import com.club.entity.User;
 import com.club.service.AuthService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
+import com.club.util.RequestUtil;
+import com.google.gson.JsonObject;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -51,10 +53,11 @@ public class AuthServlet extends HttpServlet {
     @SuppressWarnings("unchecked")
     private void register(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            Map<String, String> body = JsonUtil.fromJson(req.getReader(), Map.class);
+            JsonObject body = RequestUtil.body(req);
             Long id = authService.register(
-                    body.get("username"), body.get("password"), body.get("role"),
-                    body.get("realName"), body.get("phone"));
+                    RequestUtil.string(body, "username"), RequestUtil.string(body, "password"),
+                    RequestUtil.string(body, "role"), RequestUtil.string(body, "realName"),
+                    RequestUtil.string(body, "phone"));
             write(resp, ApiResponse.ok(Map.of("id", id)));
         } catch (IllegalArgumentException e) {
             write(resp, ApiResponse.fail(400, e.getMessage()));
@@ -63,14 +66,15 @@ public class AuthServlet extends HttpServlet {
 
     @SuppressWarnings("unchecked")
     private void login(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Map<String, String> body = JsonUtil.fromJson(req.getReader(), Map.class);
-        User u = authService.login(body.get("username"), body.get("password"));
+        JsonObject body = RequestUtil.body(req);
+        User u = authService.login(RequestUtil.string(body, "username"), RequestUtil.string(body, "password"));
         if (u == null) {
             write(resp, ApiResponse.fail(401, "用户名或密码错误"));
             return;
         }
         // 登录后把 user 写入 Session
         HttpSession session = req.getSession(true);
+        req.changeSessionId();
         session.setAttribute("user", u);
         write(resp, ApiResponse.ok(u));
     }
@@ -92,6 +96,7 @@ public class AuthServlet extends HttpServlet {
     }
 
     private void write(HttpServletResponse resp, Object body) throws IOException {
+        resp.setStatus(((ApiResponse<?>) body).getCode() == 0 ? 200 : ((ApiResponse<?>) body).getCode());
         resp.setContentType("application/json;charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         try (PrintWriter pw = resp.getWriter()) {

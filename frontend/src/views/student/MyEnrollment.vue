@@ -92,6 +92,7 @@ async function load() {
   try {
     const resp = await api.get('/enrollment/mine')
     records.value = resp.data || []
+  } catch (_) { /* 请求封装已提示 */
   } finally {
     loading.value = false
   }

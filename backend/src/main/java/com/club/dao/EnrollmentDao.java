@@ -39,6 +39,7 @@ public class EnrollmentDao {
             }
             return n;
         } catch (SQLException ex) {
+            if (ex.getErrorCode() == 1062) throw new IllegalArgumentException("你已报过这个社团");
             throw new RuntimeException("新增报名失败", ex);
         }
     }
@@ -120,7 +121,8 @@ public class EnrollmentDao {
 
     /** 统计：今日新报名数 */
     public int countTodayNew() {
-        String sql = "SELECT COUNT(*) FROM enrollment WHERE DATE(apply_time) = CURDATE()";
+        String sql = "SELECT COUNT(*) FROM enrollment WHERE apply_time >= CURDATE() "
+                + "AND apply_time < CURDATE() + INTERVAL 1 DAY";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

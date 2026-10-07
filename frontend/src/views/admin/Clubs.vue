@@ -139,6 +139,7 @@ function openEdit(row) {
 }
 
 async function submit() {
+  if (submitting.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   submitting.value = true

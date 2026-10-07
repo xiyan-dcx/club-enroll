@@ -5,6 +5,7 @@ import com.club.dao.EnrollmentDao;
 import com.club.entity.Club;
 import com.club.entity.Enrollment;
 import com.club.util.DbUtil;
+import com.club.util.RequestUtil;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -53,7 +54,7 @@ public class EnrollmentService {
     public Map<String, Object> pending(int page, int size) {
         if (page < 1) page = 1;
         if (size < 1 || size > 100) size = 10;
-        int offset = (page - 1) * size;
+        int offset = RequestUtil.offset(page, size);
         List<Enrollment> records = enrollmentDao.findPendingWithJoin(offset, size);
         int total = enrollmentDao.countPending();
 
@@ -73,6 +74,7 @@ public class EnrollmentService {
     public void review(Long enrollmentId, String action, String remark, Long reviewerId) {
         if (remark == null || remark.trim().length() < 5)
             throw new IllegalArgumentException("审批备注至少 5 字");
+        if (remark.trim().length() > 200) throw new IllegalArgumentException("审批备注不能超 200 字");
         if (!"pass".equals(action) && !"reject".equals(action))
             throw new IllegalArgumentException("action 仅支持 pass / reject");
 
@@ -86,6 +88,8 @@ public class EnrollmentService {
         //通过时校验容量
         if (newStatus == Enrollment.STATUS_PASSED) {
             Club club = clubDao.findById(e.getClubId());
+            if (club == null || club.getIsActive() != 1)
+                throw new IllegalArgumentException("社团不存在或已下架，无法通过");
             if (club.getCurrentMembers() >= club.getMaxMembers())
                 throw new IllegalArgumentException("社团已招满，无法通过");
         }
@@ -105,7 +109,7 @@ public class EnrollmentService {
                 int n2 = clubDao.incrementCurrentMembers(conn, e.getClubId());
                 if (n2 != 1) {
                     // 防超员（并发审批同时通过两条，可能挤爆容量）
-                    throw new IllegalArgumentException("社团人数已达上限");
+                    throw new IllegalArgumentException("社团已下架或人数已达上限");
                 }
             }
 

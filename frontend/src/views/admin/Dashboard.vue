@@ -91,7 +91,7 @@
           <ul class="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
             <li class="flex gap-2">
               <span class="text-[#FF6B6B] font-bold">·</span>
-              管理员可以查看学生侧页面,但学生不能进入管理后台
+              学生与管理员分别进入各自工作台，后台接口独立校验角色权限
             </li>
             <li class="flex gap-2">
               <span class="text-[#FF6B6B] font-bold">·</span>
@@ -99,7 +99,7 @@
             </li>
             <li class="flex gap-2">
               <span class="text-[#FF6B6B] font-bold">·</span>
-              拒绝报名必须填写理由,通过则可选
+              通过或拒绝报名均需填写 5-200 字审批备注
             </li>
             <li class="flex gap-2">
               <span class="text-[#FF6B6B] font-bold">·</span>
@@ -133,8 +133,8 @@ const greeting = computed(() => {
 })
 
 const cards = [
-  { key: 'clubCount',    label: '社团总数',   tip: '正在运营的社团',  icon: OfficeBuilding, bg: 'brand-hero',   go: '/admin/clubs' },
-  { key: 'studentCount', label: '注册学生',   tip: '平台活跃用户',    icon: User,           bg: 'brand-mint' },
+  { key: 'clubCount',    label: '社团总数',   tip: '含已下架社团',  icon: OfficeBuilding, bg: 'brand-hero',   go: '/admin/clubs' },
+  { key: 'studentCount', label: '注册学生',   tip: '累计注册学生',    icon: User,           bg: 'brand-mint' },
   { key: 'pendingCount', label: '待审批报名', tip: '点击立即处理',    icon: Document,       bg: 'brand-violet', go: '/admin/enrollments' },
   { key: 'noticeCount',  label: '已发布公告', tip: '历史累计',        icon: Bell,           bg: 'brand-sun',    go: '/admin/notices' },
 ]

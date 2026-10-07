@@ -14,7 +14,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080/club-enroll',
+        target: process.env.CLUB_BACKEND_URL || 'http://localhost:8080/club-enroll',
         changeOrigin: true,
         cookieDomainRewrite: 'localhost',
         // 后端 context-path 是 /club-enroll，Tomcat 的 cookie Path 与之相同

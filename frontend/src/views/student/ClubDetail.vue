@@ -164,7 +164,7 @@ const alreadyApplied = ref(false)
 const full = computed(() => club.value && (club.value.currentMembers ?? 0) >= (club.value.maxMembers ?? Infinity))
 const buttonText = computed(() => {
   if (full.value) return '社团已招满'
-  if (alreadyApplied.value) return '你已报名,等待审批中'
+  if (alreadyApplied.value) return '你已报名，请在我的报名中查看结果'
   return '✨ 我要报名 ✨'
 })
 
@@ -188,12 +188,14 @@ async function loadDetail() {
       const list = mineResp.data || []
       alreadyApplied.value = Array.isArray(list) && list.some((e) => e.clubId === clubId)
     } catch (_) { /* ignore */ }
+  } catch (_) { /* 请求封装已提示 */
   } finally {
     loading.value = false
   }
 }
 
 async function onSubmit() {
+  if (submitting.value) return
   const valid = await applyFormRef.value.validate().catch(() => false)
   if (!valid) return
   submitting.value = true

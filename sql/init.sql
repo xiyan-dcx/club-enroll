@@ -17,7 +17,7 @@ USE club_enroll;
 CREATE TABLE user (
                       id          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
                       username    VARCHAR(32)  NOT NULL                COMMENT '用户名（唯一）',
-                      password    VARCHAR(64)  NOT NULL                COMMENT '密码（明文，仅教学）',
+                      password    VARCHAR(64)  NOT NULL                COMMENT '密码（BCrypt 哈希）',
                       role        VARCHAR(16)  NOT NULL                COMMENT '角色：student / admin',
                       real_name   VARCHAR(32)  NOT NULL                COMMENT '真实姓名',
                       phone       VARCHAR(11)  NOT NULL                COMMENT '手机号（11位）',
@@ -94,12 +94,12 @@ CREATE TABLE notice (
 USE club_enroll;
 
 -- ============ 1. 用户：3 学生 + 1 管理员 ============
--- 密码都明文 "123456"（仅教学）
+-- 仅本地演示：chen/zhang/li 的密码为 123456，admin001 为 admin123；数据库存储 BCrypt 哈希。生产环境请另建账号。
 INSERT INTO user (username, password, role, real_name, phone) VALUES
-                                                                  ('chen',      '123456', 'student', '陈同学', '13800138001'),
-                                                                  ('zhang',     '123456', 'student', '张同学', '13800138002'),
-                                                                  ('li',        '123456', 'student', '李同学', '13800138003'),
-                                                                  ('admin001',  'admin123', 'admin', '社联部张老师', '13900139001');
+                                                                  ('chen',      '$2a$12$Obt421J7TJdTpWZHGUpmjOY5ssl/MZXFvFJkRA4AfW43jStUu65tC', 'student', '陈同学', '13800138001'),
+                                                                  ('zhang',     '$2a$12$StDS1UtpGBnrOD0QsGmYJuFLG24pLUna1aw9So.Idkp4dUec4Dc0y', 'student', '张同学', '13800138002'),
+                                                                  ('li',        '$2a$12$6WoBZQ..t95Ux66z0iZc9..Sx8lmHKx8cPvweXZ/3.fKM79sshcby', 'student', '李同学', '13800138003'),
+                                                                  ('admin001',  '$2a$12$csNuzr9wUgxszLfftYNnPOaFhHluXgiTqubipxQBky/6ceQkrot4a', 'admin', '社联部张老师', '13900139001');
 
 -- ============ 2. 社团：5 个，含分类多样 ============
 INSERT INTO club (name, category, intro, leader, max_members, current_members, is_active) VALUES

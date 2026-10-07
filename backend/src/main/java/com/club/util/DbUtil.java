@@ -16,23 +16,20 @@ import java.util.Properties;
  */
 public class DbUtil {
 
-    private static HikariDataSource DATA_SOURCE = new HikariDataSource();
+    private static final HikariDataSource DATA_SOURCE;
 
     static {
         Properties props = new Properties();
         try(InputStream in =DbUtil.class.getClassLoader().getResourceAsStream("db.properties")){
-            if(in == null){
-                throw new IllegalArgumentException("未找到 db.properties，请放在 src/main/resources");
-            }
-            props.load(in);
+            if (in != null) props.load(in);
         }catch (IOException e){
             throw new RuntimeException("读取 db.properties 失败", e);
         }
 
         HikariConfig cfg = new HikariConfig();
-        cfg.setJdbcUrl(props.getProperty("jdbc.url"));
-        cfg.setUsername(props.getProperty("jdbc.username"));
-        cfg.setPassword(props.getProperty("jdbc.password"));
+        cfg.setJdbcUrl(setting(props, "jdbc.url", "CLUB_DB_URL"));
+        cfg.setUsername(setting(props, "jdbc.username", "CLUB_DB_USERNAME"));
+        cfg.setPassword(setting(props, "jdbc.password", "CLUB_DB_PASSWORD"));
         cfg.setDriverClassName(props.getProperty("jdbc.driver", "com.mysql.cj.jdbc.Driver"));
 
         cfg.setMaximumPoolSize(parseInt(props.getProperty("hikari.maximumPoolSize"),10));
@@ -75,4 +72,11 @@ public class DbUtil {
     }
 
     private DbUtil() {}
+
+    private static String setting(Properties props, String key, String env) {
+        String value = System.getenv(env);
+        if (value == null) value = props.getProperty(key);
+        if (value == null) throw new IllegalArgumentException("缺少数据库配置: " + key);
+        return value;
+    }
 }

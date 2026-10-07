@@ -7,7 +7,7 @@
           <p class="text-sm text-[var(--text-secondary)] mt-1">
             待审批
             <el-tag type="warning" class="!mx-1" round>{{ list.length }}</el-tag>
-            条
+            条（共 {{ total }} 条）
           </p>
         </div>
         <el-button @click="loadList">
@@ -23,11 +23,10 @@
             <template #default="{ row }">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full brand-mint flex items-center justify-center text-white text-sm font-bold">              
-		  {{ (row.realName || row.username || 'S').charAt(0)}}		  
+		  {{ (row.studentName || 'S').charAt(0) }}
                 </div>		   
                 <div>
-                  <div class="font-semibold">{{ row.realName || row.username }}</div>
-                  <div class="text-xs text-[var(--text-secondary)]">{{ row.phone || '—' }}</div>
+                  <div class="font-semibold">{{ row.studentName }}</div>
                 </div>
 
 
@@ -63,6 +62,9 @@
             </div>
           </template>
         </el-table>
+        <el-pagination v-if="total > 0" class="mt-6" v-model:current-page="page"
+          :page-size="size" :total="total" layout="total, prev, pager, next"
+          @current-change="loadList" />
       </div>
     </div>
   </AdminLayout>
@@ -77,20 +79,32 @@ import api from '@/utils/api'
 
 const list = ref([])
 const loading = ref(false)
+const page = ref(1)
+const size = 10
+const total = ref(0)
+const reviewing = ref(false)
 
 async function loadList() {
   loading.value = true
   try {
-    const res = await api.get('/enrollment/pending')
+    const res = await api.get('/enrollment/pending', { params: { page: page.value, size } })
     // 后端 EnrollmentService.pending() 返回的是分页 Map(records/total/page/size),
     // records 才是真正的数组,直接取 res.data 会把 Map 喂给 el-table 导致渲染异常。
     list.value = res.data?.records || []
+    total.value = res.data?.total || 0
+    if (list.value.length === 0 && page.value > 1) {
+      page.value--
+      await loadList()
+    }
+  } catch (_) { /* 请求封装已提示 */
   } finally {
     loading.value = false
   }
 }
 
 async function review(row, decision) {
+  if (reviewing.value) return
+  reviewing.value = true
   const passing = decision === 'pass'
 
   /*
@@ -102,30 +116,31 @@ async function review(row, decision) {
   try {
     const { value: remark } = await ElMessageBox.prompt(
       passing
-        ? `通过 ${row.realName || row.username} 报名「${row.clubName}」?可填写欢迎话。`
-        : `拒绝 ${row.realName || row.username} 报名「${row.clubName}」?请填写原因。`,
+        ? `通过 ${row.studentName} 报名「${row.clubName}」？请填写 5-200 字备注。`
+        : `拒绝 ${row.studentName} 报名「${row.clubName}」？请填写 5-200 字原因。`,
       passing ? '通过申请' : '拒绝申请',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputValue: passing ? '欢迎加入社团!' : '',
         inputValidator: (val) => {
-          if (!passing && (!val || !val.trim())) return '拒绝理由必填'
+          const length = (val || '').trim().length
+          if (length < 5 || length > 200) return '审批备注须为 5-200 字'
           return true
         },
         type: passing ? 'success' : 'warning',
       }
     )
     await api.post('/enrollment/review', {
-      enrollmentId: row.id,
-      decision,
+      id: row.id,
+      action: decision,
       remark: (remark || '').trim(),
     })
     ElMessage.success(passing ? '已通过' : '已拒绝')
     loadList()
   } catch (_) {
     /* user cancelled */
-  }
+  } finally { reviewing.value = false }
 }
 
 onMounted(loadList)

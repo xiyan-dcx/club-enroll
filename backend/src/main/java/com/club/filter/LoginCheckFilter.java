@@ -42,11 +42,12 @@ public class LoginCheckFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
 
         //1.去掉 context path（/club）后的业务URI
-        String uri  = req.getRequestURI().substring(req.getContextPath().length());
+        String uri = req.getServletPath() + (req.getPathInfo() == null ? "" : req.getPathInfo());
+        req.setCharacterEncoding("UTF-8");
 
         //2.白名单直接放行
         if (WHITELIST.contains(uri)) {
-            chain.doFilter(request, response);
+            proceed(req, resp, chain);
             return;
         }
 
@@ -74,24 +75,37 @@ public class LoginCheckFilter implements Filter {
             }
         }
 
-        chain.doFilter(request, response);
+        proceed(req, resp, chain);
 
 
     }
 
     private boolean isAdminOnly(String uri,String method) {
-        // POST/PUT/DELETE 到 /api/club 是管理员维护；GET 列表/详情学生可看
-        if (uri.startsWith("/api/club") && !uri.equals("/api/auth/login") && !uri.equals("/api/club/list") && !uri.equals("/api/club/detail")) {
-            return !"GET".equalsIgnoreCase(method);
-        }
+        // 按整个资源范围校验，防止 /list 或尾斜杠的写请求绕过鉴权。
+        if (uri.startsWith("/api/club") || uri.startsWith("/api/notice"))
+            return !"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method);
         // 待审 + 审批
         if (uri.equals("/api/enrollment/pending")) return true;
         if (uri.equals("/api/enrollment/review"))  return true;
         // 发布公告（POST /api/notice，注意没有 pathInfo）
         if (uri.equals("/api/notice") && !"GET".equalsIgnoreCase(method)) return true;
         // 仪表盘
-        if (uri.equals("/api/stat/dashboard")) return true;
+        if (uri.startsWith("/api/stat")) return true;
         return false;
+    }
+
+    private void proceed(HttpServletRequest req, HttpServletResponse resp, FilterChain chain)
+            throws IOException, ServletException {
+        try {
+            chain.doFilter(req, resp);
+        } catch (IllegalArgumentException | com.google.gson.JsonParseException ex) {
+            if (resp.isCommitted()) throw ex;
+            write(resp, 400, ApiResponse.fail(400, "请求参数不合法"));
+        } catch (RuntimeException ex) {
+            if (resp.isCommitted()) throw ex;
+            req.getServletContext().log("API 请求处理失败", ex);
+            write(resp, 500, ApiResponse.fail(500, "服务器处理失败，请稍后重试"));
+        }
     }
 
     private boolean isStudentOnly(String uri, String method) {

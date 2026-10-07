@@ -19,3 +19,7 @@ Thumbs.db
 # 本地配置
 **/db.properties
 **/application-local.*
+
+# 本地验证过程与日志
+.audit/
+backend/cookies.txt

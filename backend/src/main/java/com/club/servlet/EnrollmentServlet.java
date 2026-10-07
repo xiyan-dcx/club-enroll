@@ -4,6 +4,8 @@ import com.club.entity.User;
 import com.club.service.EnrollmentService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
+import com.club.util.RequestUtil;
+import com.google.gson.JsonObject;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -59,9 +61,9 @@ public class EnrollmentServlet extends HttpServlet {
     @SuppressWarnings("unchecked")
     private void apply(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User me = currentUser(req);
-        Map<String, Object> body = JsonUtil.fromJson(req.getReader(), Map.class);
-        Long clubId = ((Number) body.get("clubId")).longValue();
-        String reason = (String) body.get("reason");
+        JsonObject body = RequestUtil.body(req);
+        Long clubId = RequestUtil.id(body, "clubId");
+        String reason = RequestUtil.string(body, "reason");
         Long id = service.apply(me.getId(), clubId, reason);
         write(resp, ApiResponse.ok(Map.of("id", id)));
     }
@@ -80,13 +82,10 @@ public class EnrollmentServlet extends HttpServlet {
     @SuppressWarnings("unchecked")
     private void review(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User me = currentUser(req);
-        Map<String, Object> body = JsonUtil.fromJson(req.getReader(), Map.class);
-        Long id = ((Number) body.get("id")).longValue();
-        //Long id = Double.valueOf(String.valueOf(body.get("enrollmentId"))).longValue();
-        String action = (String) body.get("action");
-//        String action = (String) body.get("decision");
-        String remark = (String) body.get("remark");
-        System.out.println("EnrollmentServlet review...."+body);
+        JsonObject body = RequestUtil.body(req);
+        Long id = RequestUtil.id(body, "id");
+        String action = RequestUtil.string(body, "action");
+        String remark = RequestUtil.string(body, "remark");
         service.review(id, action, remark, me.getId());
         write(resp, ApiResponse.ok());
     }
@@ -102,6 +101,7 @@ public class EnrollmentServlet extends HttpServlet {
     }
 
     private void write(HttpServletResponse resp, Object body) throws IOException {
+        resp.setStatus(((ApiResponse<?>) body).getCode() == 0 ? 200 : ((ApiResponse<?>) body).getCode());
         resp.setContentType("application/json;charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         try (PrintWriter pw = resp.getWriter()) { pw.write(JsonUtil.toJson(body)); }

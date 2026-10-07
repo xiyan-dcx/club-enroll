@@ -111,6 +111,7 @@ body {
   border-radius: 10px !important;
 }
 .el-dialog {
+  max-width: calc(100vw - 32px);
   border-radius: 20px !important;
   overflow: hidden;
 }

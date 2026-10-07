@@ -40,13 +40,6 @@
             <el-input v-model="form.phone" maxlength="11" placeholder="11 位手机号" />
           </el-form-item>
 
-          <el-form-item label="角色" prop="role">
-            <el-radio-group v-model="form.role" class="w-full">
-              <el-radio-button value="student" class="flex-1">学生</el-radio-button>
-              <el-radio-button value="admin" class="flex-1">管理员(教学演示)</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-
           <el-button
             type="primary"
             size="large"
@@ -84,7 +77,6 @@ const form = reactive({
   password: '',
   realName: '',
   phone: '',
-  role: 'student',
 })
 
 const rules = {
@@ -101,7 +93,6 @@ const rules = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^\d{11}$/, message: '11 位数字', trigger: 'blur' },
   ],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
 }
 
 async function onSubmit() {

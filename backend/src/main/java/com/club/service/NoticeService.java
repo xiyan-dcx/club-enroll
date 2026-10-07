@@ -1,6 +1,8 @@
 package com.club.service;
 
 import com.club.dao.NoticeDao;
+import com.club.dao.ClubDao;
+import com.club.entity.Club;
 import com.club.entity.Notice;
 
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.List;
 public class NoticeService {
 
     private final NoticeDao noticeDao = new NoticeDao();
+    private final ClubDao clubDao = new ClubDao();
 
     public List<Notice> list(Long clubId) {
         if (clubId == null) {
@@ -30,6 +33,11 @@ public class NoticeService {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("正文不能为空");
         }
+        if (content.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 65535)
+            throw new IllegalArgumentException("正文内容过长");
+        Club club = clubDao.findById(clubId);
+        if (club == null || club.getIsActive() != 1)
+            throw new IllegalArgumentException("社团不存在或已下架");
 
         Notice n = new Notice();
         n.setClubId(clubId);

@@ -19,7 +19,7 @@
             <span class="bg-gradient-to-r from-white to-[#FFE066] bg-clip-text text-transparent">第一个社团</span>
           </h1>
           <p class="text-white/85 text-lg leading-relaxed max-w-md">
-            128 个学生社团等你来探索 —— 学术、体育、文艺、公益,总有一个让你眼前一亮。
+            浏览社团介绍、提交报名并查询审批结果，开启你的社团之旅。
           </p>
           <div class="flex gap-3 pt-2">
             <span class="px-3 py-1.5 rounded-full bg-white/20 text-sm">学术</span>
@@ -59,7 +59,7 @@
             <el-form-item label="用户名" prop="username">
               <el-input
                 v-model="form.username"
-                placeholder="例如 student1 / 123456"
+                placeholder="请输入用户名"
                 :prefix-icon="User"
                 autofocus
               />
@@ -98,9 +98,6 @@
             立即注册新账号
           </button>
 
-          <p class="text-center text-xs text-[var(--text-secondary)] mt-6">
-            测试账号:学生 <span class="font-mono">student1或者student2 / 123456</span> · 管理员 <span class="font-mono">admin / 123456</span>
-          </p>
         </div>
       </div>
     </main>

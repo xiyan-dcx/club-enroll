@@ -4,6 +4,8 @@ import com.club.entity.User;
 import com.club.service.NoticeService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
+import com.club.util.RequestUtil;
+import com.google.gson.JsonObject;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -33,7 +35,7 @@ public class NoticeServlet extends HttpServlet {
             return;
         }
         String cid = req.getParameter("clubId");
-        Long clubId = (cid == null || cid.isBlank()) ? null : Long.parseLong(cid);
+        Long clubId = (cid == null || cid.isBlank()) ? null : RequestUtil.positiveId(cid, "clubId");
         write(resp, ApiResponse.ok(service.list(clubId)));
     }
 
@@ -41,11 +43,14 @@ public class NoticeServlet extends HttpServlet {
     @SuppressWarnings("unchecked")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
+            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+                write(resp, ApiResponse.fail(404, "未知路径")); return;
+            }
             User me = currentUser(req);
-            Map<String, Object> body = JsonUtil.fromJson(req.getReader(), Map.class);
-            Long clubId = ((Number) body.get("clubId")).longValue();
-            String title = (String) body.get("title");
-            String content = (String) body.get("content");
+            JsonObject body = RequestUtil.body(req);
+            Long clubId = RequestUtil.id(body, "clubId");
+            String title = RequestUtil.string(body, "title");
+            String content = RequestUtil.string(body, "content");
             Long id = service.publish(clubId, title, content, me.getId());
             write(resp, ApiResponse.ok(Map.of("id", id)));
         } catch (IllegalArgumentException e) {
@@ -59,6 +64,7 @@ public class NoticeServlet extends HttpServlet {
     }
 
     private void write(HttpServletResponse resp, Object body) throws IOException {
+        resp.setStatus(((ApiResponse<?>) body).getCode() == 0 ? 200 : ((ApiResponse<?>) body).getCode());
         resp.setContentType("application/json;charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         try (PrintWriter pw = resp.getWriter()) { pw.write(JsonUtil.toJson(body)); }

@@ -36,7 +36,7 @@ async function signOut() {
       </nav>
       <nav v-else>
         <RouterLink to="/student/home">探索社团</RouterLink>
-        <RouterLink to="/student/enrollments">我的报名</RouterLink>
+        <RouterLink to="/student/my-enrollment">我的报名</RouterLink>
       </nav>
       <span>{{ user?.realName }}</span>
       <el-button :loading="leaving" @click="signOut">退出登录</el-button>

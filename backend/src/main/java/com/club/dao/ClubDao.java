@@ -103,13 +103,14 @@ public class ClubDao {
             }
             return n;
         } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) throw new IllegalArgumentException("社团名称已存在");
             throw new RuntimeException("新增社团失败", e);
         }
     }
 
     public int update(Club c) {
         String sql = "UPDATE club SET name = ?, category = ?, intro = ?, leader = ?, "
-                + "max_members = ?, is_active = ? WHERE id = ?";
+                + "max_members = ?, is_active = ? WHERE id = ? AND current_members <= ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.getName());
@@ -119,8 +120,10 @@ public class ClubDao {
             ps.setInt(5, c.getMaxMembers());
             ps.setInt(6, c.getIsActive());
             ps.setLong(7, c.getId());
+            ps.setInt(8, c.getMaxMembers());
             return ps.executeUpdate();
         } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) throw new IllegalArgumentException("社团名称已存在");
             throw new RuntimeException("修改社团失败", e);
         }
     }
@@ -139,7 +142,7 @@ public class ClubDao {
     /** 在外部事务里给 current_members + 1，配合审批通过。 */
     public int incrementCurrentMembers(Connection conn, Long id) throws SQLException {
         String sql = "UPDATE club SET current_members = current_members + 1 "
-                + "WHERE id = ? AND current_members < max_members";
+                + "WHERE id = ? AND is_active = 1 AND current_members < max_members";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate();

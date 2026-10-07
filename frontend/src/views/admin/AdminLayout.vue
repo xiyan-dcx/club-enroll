@@ -35,6 +35,16 @@
 
     <!-- 内容区 -->
     <main class="flex-1 min-w-0">
+      <header class="md:hidden bg-white border-b border-[#F2EAE0] p-4">
+        <div class="flex items-center justify-between mb-3">
+          <strong>管理后台</strong>
+          <el-button size="small" @click="logout">退出登录</el-button>
+        </div>
+        <nav class="flex flex-wrap gap-3 text-sm">
+          <RouterLink v-for="item in nav" :key="item.path" :to="item.path"
+            active-class="text-[#FF6B6B] font-semibold">{{ item.label }}</RouterLink>
+        </nav>
+      </header>
       <slot />
     </main>
   </div>

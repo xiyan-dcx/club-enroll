@@ -57,7 +57,7 @@
         <el-form-item label="标题" prop="title">
           <el-input
             v-model="form.title"
-            maxlength="50"
+            maxlength="64"
             show-word-limit
             placeholder="一句话说清楚"
           />
@@ -73,7 +73,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submit">发布</el-button>
+        <el-button type="primary" :loading="submitting" @click="submit">发布</el-button>
       </template>
     </el-dialog>
   </AdminLayout>
@@ -89,20 +89,24 @@ import api from '@/utils/api'
 const list = ref([])
 const clubOptions = ref([])
 const loading = ref(false)
+const submitting = ref(false)
 
 async function loadList() {
   loading.value = true
   try {
     const res = await api.get('/notice/list')
     list.value = res.data || []
+  } catch (_) { /* 请求封装已提示 */
   } finally {
     loading.value = false
   }
 }
 
 async function loadClubs() {
-  const res = await api.get('/club/list')
-  clubOptions.value = (res.data?.records || []).filter((c) => c.isActive)
+  try {
+    const res = await api.get('/club/list', { params: { size: 100 } })
+    clubOptions.value = (res.data?.records || []).filter((c) => c.isActive)
+  } catch (_) { /* 请求封装已提示 */ }
 }
 
 const dialogVisible = ref(false)
@@ -111,7 +115,7 @@ const form = ref({ clubId: null, title: '', content: '' })
 
 const rules = {
   clubId:  [{ required: true, message: '请选择社团', trigger: 'change' }],
-  title:   [{ required: true, max: 50, message: '标题 1-50 字', trigger: 'blur' }],
+  title:   [{ required: true, max: 64, message: '标题 1-64 字', trigger: 'blur' }],
   content: [{ required: true, message: '请输入正文', trigger: 'blur' }],
 }
 
@@ -121,11 +125,16 @@ function openAdd() {
 }
 
 async function submit() {
-  await formRef.value.validate()
-  await api.post('/notice', form.value)
-  ElMessage.success('发布成功')
-  dialogVisible.value = false
-  loadList()
+  if (submitting.value) return
+  if (!await formRef.value.validate().catch(() => false)) return
+  submitting.value = true
+  try {
+    await api.post('/notice', form.value)
+    ElMessage.success('发布成功')
+    dialogVisible.value = false
+    await loadList()
+  } catch (_) { /* 请求封装已提示 */ }
+  finally { submitting.value = false }
 }
 
 onMounted(() => {

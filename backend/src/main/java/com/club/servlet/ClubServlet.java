@@ -5,6 +5,8 @@ import com.club.entity.User;
 import com.club.service.ClubService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
+import com.club.util.RequestUtil;
+import com.google.gson.JsonObject;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -46,7 +48,10 @@ public class ClubServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            Club c = JsonUtil.fromJson(req.getReader(), Club.class);
+            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+                write(resp, ApiResponse.fail(404, "未知路径")); return;
+            }
+            Club c = readClub(req, false);
             Long id = clubService.create(c);
             write(resp, ApiResponse.ok(Map.of("id", id)));
         } catch (IllegalArgumentException e) {
@@ -57,7 +62,10 @@ public class ClubServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            Club c = JsonUtil.fromJson(req.getReader(), Club.class);
+            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+                write(resp, ApiResponse.fail(404, "未知路径")); return;
+            }
+            Club c = readClub(req, true);
             clubService.update(c);
             write(resp, ApiResponse.ok());
         } catch (IllegalArgumentException e) {
@@ -68,7 +76,10 @@ public class ClubServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            long id = Long.parseLong(req.getParameter("id"));
+            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+                write(resp, ApiResponse.fail(404, "未知路径")); return;
+            }
+            long id = RequestUtil.positiveId(req.getParameter("id"), "id");
             clubService.deactivate(id);
             write(resp, ApiResponse.ok());
         } catch (NumberFormatException e) {
@@ -89,8 +100,27 @@ public class ClubServlet extends HttpServlet {
                 clubService.search(keyword, category, page, size, onlyActive)));
     }
 
+    private Club readClub(HttpServletRequest req, boolean updating) throws IOException {
+        JsonObject body = RequestUtil.body(req);
+        Club c = new Club();
+        if (updating) c.setId(RequestUtil.id(body, "id"));
+        c.setName(RequestUtil.string(body, "name"));
+        c.setCategory(RequestUtil.string(body, "category"));
+        c.setLeader(RequestUtil.string(body, "leader"));
+        c.setIntro(RequestUtil.string(body, "intro"));
+        long max = RequestUtil.id(body, "maxMembers");
+        if (max > Integer.MAX_VALUE) throw new IllegalArgumentException("人数上限超出范围");
+        c.setMaxMembers((int) max);
+        if (body.has("isActive") && !body.get("isActive").isJsonNull()) {
+            String status = body.get("isActive").toString();
+            if (!"0".equals(status) && !"1".equals(status)) throw new IllegalArgumentException("状态仅支持 0 或 1");
+            c.setIsActive(Integer.parseInt(status));
+        }
+        return c;
+    }
+
     private void detail(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        long id = Long.parseLong(req.getParameter("id"));
+        long id = RequestUtil.positiveId(req.getParameter("id"), "id");
         write(resp, ApiResponse.ok(clubService.detail(id)));
     }
 
@@ -107,6 +137,7 @@ public class ClubServlet extends HttpServlet {
     }
 
     private void write(HttpServletResponse resp, Object body) throws IOException {
+        resp.setStatus(((ApiResponse<?>) body).getCode() == 0 ? 200 : ((ApiResponse<?>) body).getCode());
         resp.setContentType("application/json;charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         try (PrintWriter pw = resp.getWriter()) { pw.write(JsonUtil.toJson(body)); }

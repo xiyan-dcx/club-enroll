@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Gson 工具。
  * 1) 注册 LocalDateTime 的序列化 / 反序列化（Gson 默认不会处理 java.time 类型）。
- * 2) disableHtmlEscaping 避免 &lt; 被转成 &amp;lt; 让公告 HTML 渲染异常。
+ * 2) 公告按纯文本显示；JSON 转义与前端模板的 HTML 转义是不同层次。
  * Gson 实例线程安全且重量级，全程一个静态实例。
  */
 public class JsonUtil {
