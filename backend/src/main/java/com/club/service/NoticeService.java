@@ -8,6 +8,7 @@ import com.club.entity.Notice;
 import java.util.List;
 
 //公告业务
+@org.springframework.stereotype.Service
 public class NoticeService {
 
     private final NoticeDao noticeDao = new NoticeDao();

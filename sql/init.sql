@@ -94,7 +94,7 @@ CREATE TABLE notice (
 USE club_enroll;
 
 -- ============ 1. 用户：3 学生 + 1 管理员 ============
--- 仅本地演示：chen/zhang/li 的密码为 123456，admin001 为 admin123；数据库存储 BCrypt 哈希。生产环境请另建账号。
+-- 本地初始账号：chen/zhang/li 的密码为 123456，admin001 为 admin123；数据库存储 BCrypt 哈希。生产环境请另建账号。
 INSERT INTO user (username, password, role, real_name, phone) VALUES
                                                                   ('chen',      '$2a$12$Obt421J7TJdTpWZHGUpmjOY5ssl/MZXFvFJkRA4AfW43jStUu65tC', 'student', '陈同学', '13800138001'),
                                                                   ('zhang',     '$2a$12$StDS1UtpGBnrOD0QsGmYJuFLG24pLUna1aw9So.Idkp4dUec4Dc0y', 'student', '张同学', '13800138002'),

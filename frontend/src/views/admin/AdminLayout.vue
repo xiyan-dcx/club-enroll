@@ -60,6 +60,7 @@ const router = useRouter()
 const user = JSON.parse(localStorage.getItem('user') || 'null')
 
 const nav = [
+  { path: '/admin/portal', label: '社团与活动', icon: Bell },
   { path: '/admin/dashboard',   label: '仪表盘',   icon: Odometer },
   { path: '/admin/clubs',       label: '社团管理', icon: OfficeBuilding },
   { path: '/admin/enrollments', label: '报名审批', icon: Document },

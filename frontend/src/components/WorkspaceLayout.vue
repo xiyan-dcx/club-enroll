@@ -27,14 +27,16 @@ async function signOut() {
 <template>
   <div class="workspace">
     <header class="workspace-header">
-      <strong>校园社团报名通</strong>
+      <strong>青聚 · 社团招新与活动预约</strong>
       <nav v-if="admin">
+        <RouterLink to="/admin/portal">社团与活动</RouterLink>
         <RouterLink to="/admin/dashboard">概览</RouterLink>
         <RouterLink to="/admin/clubs">社团管理</RouterLink>
         <RouterLink to="/admin/enrollments">报名审批</RouterLink>
         <RouterLink to="/admin/notices">公告管理</RouterLink>
       </nav>
       <nav v-else>
+        <RouterLink to="/student/portal">活动预约与管理</RouterLink>
         <RouterLink to="/student/home">探索社团</RouterLink>
         <RouterLink to="/student/my-enrollment">我的报名</RouterLink>
       </nav>

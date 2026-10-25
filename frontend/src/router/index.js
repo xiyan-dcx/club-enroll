@@ -8,6 +8,8 @@ const routes = [
   { path: '/register',  component: () => import('../views/Register.vue'), meta: { public: true } },
 
   // 学生侧
+  { path: '/student/portal', component: () => import('../views/Portal.vue'), meta: { role: 'student' } },
+  { path: '/admin/portal', component: () => import('../views/Portal.vue'), meta: { role: 'admin' } },
   { path: '/student/home',         component: () => import('../views/student/Home.vue'),          meta: { role: 'student' } },
   { path: '/student/club/:id',     component: () => import('../views/student/ClubDetail.vue'),    meta: { role: 'student' } },
   { path: '/student/my-enrollment',component: () => import('../views/student/MyEnrollment.vue'),  meta: { role: 'student' } },

@@ -7,6 +7,7 @@ import com.club.util.PasswordUtil;
 /**
  * 账户系统业务：注册+登录
  */
+@org.springframework.stereotype.Service
 public class AuthService {
     private final UserDao userDao;
 

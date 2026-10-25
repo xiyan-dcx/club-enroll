@@ -9,8 +9,9 @@ if (!base || !process.argv.includes('--allow-write') || !['localhost', '127.0.0.
 const prefix = `audit_${Date.now()}`
 const results = []
 function client() {
-  let cookie = ''
+  let cookie = ''; const studentNo = 'S'+crypto.randomUUID().replaceAll('-','').slice(0,25)
   return async (method, path, body) => {
+    if(path==='/enrollment/apply' && typeof body==='object')body={studentNo,realName:'测试学生',...body}
     const res = await fetch(base + path, {
       method,
       headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
@@ -41,6 +42,7 @@ await check('示例学生登录且不返回密码', async () => {
   assert.equal(user.role, 'student'); assert.equal(user.password, undefined)
 })
 await check('示例管理员登录', async () => assert.equal(expect(await admin('POST', '/auth/login', { username: 'admin001', password: 'admin123' }), 200).role, 'admin'))
+async function verifyStudent() {}
 for (const path of ['/notice', '/notice/', '/notice/list', '/club/list', '/enrollment/review', '/enrollment/%72eview', '/enrollment/review;test']) {
   await check(`学生写接口拒绝 ${path}`, async () => expect(await student('POST', path, {}), 403))
 }
@@ -58,7 +60,7 @@ await check('学生报名成功', async () => { enrollmentId = expect(await stud
 await check('重复报名被拒绝', async () => expect(await student('POST', '/enrollment/apply', { clubId, reason: '我希望加入社团参加活动学习交流' }), 400))
 await check('待审接口含学生姓名且支持分页', async () => {
   const page = expect(await admin('GET', '/enrollment/pending?size=100'), 200)
-  assert.equal(page.records.find(row => row.id === enrollmentId).studentName, '陈同学')
+  assert.equal(page.records.find(row => row.id === enrollmentId).studentName, '测试学生')
   assert.equal(page.size, 100)
 })
 await check('审批通过并递增人数', async () => {
@@ -91,6 +93,7 @@ await check('准备8个独立学生及3名额社团', async () => {
     expect(await c('POST', '/auth/register', { username, password: 'test12345', realName: '测试学生' + i, phone: '13800138000' }), 200)
     assert.equal(expect(await c('POST', '/auth/login', { username, password: 'test12345' }), 200).role, 'student')
     clients.push(c)
+    await verifyStudent(c, `S${Date.now()}${i}`)
     applications.push(expect(await c('POST', '/enrollment/apply', { clubId: capacityId, reason: '我希望加入社团参加活动学习交流' }), 200).id)
   }
 })

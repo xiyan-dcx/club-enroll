@@ -21,6 +21,9 @@ public class Enrollment {
 
     // 仅 JOIN 查询时填充（DTO 字段，数据库表里没有）
     private String studentName;
+    private String studentNo;
+    public String getStudentNo(){return studentNo;}
+    public void setStudentNo(String value){studentNo=value;}
     private String clubName;
     private String category;
 

@@ -1,4 +1,5 @@
-package com.club.servlet;
+package com.club.controller;
+import org.springframework.web.bind.annotation.*;
 
 import com.club.dao.EnrollmentDao;
 import com.club.dao.NoticeDao;
@@ -7,8 +8,8 @@ import com.club.service.ClubService;
 import com.club.util.ApiResponse;
 import com.club.util.JsonUtil;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
+
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -18,16 +19,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** 管理员仪表盘:4 张统计卡片(社团 / 学生 / 待审 / 公告) */
-@WebServlet(name = "StatServlet", urlPatterns = "/api/stat/dashboard")
-public class StatServlet extends HttpServlet {
+@RestController
+@RequestMapping("/api/stat")
+public class StatController {
 
-    private final ClubService clubService = new ClubService();
+    @org.springframework.beans.factory.annotation.Autowired private ClubService clubService;
     private final UserDao userDao = new UserDao();
     private final EnrollmentDao enrollmentDao = new EnrollmentDao();
     private final NoticeDao noticeDao = new NoticeDao();
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    
+    @GetMapping({"","/**"})
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Map<String, Object> data = new HashMap<>();
         // 4 个核心字段,字段名跟前端 Dashboard.vue 对齐
         data.put("clubCount",    clubService.countAll());

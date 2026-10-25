@@ -1,4 +1,5 @@
-package com.club.servlet;
+package com.club.controller;
+import org.springframework.web.bind.annotation.*;
 
 import com.club.entity.Club;
 import com.club.entity.User;
@@ -8,8 +9,8 @@ import com.club.util.JsonUtil;
 import com.club.util.RequestUtil;
 import com.google.gson.JsonObject;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
+
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -26,14 +27,16 @@ import java.util.Map;
  *   PUT    /api/club            管理员修改
  *   DELETE /api/club?id=        管理员下架
  */
-@WebServlet(name = "ClubServlet", urlPatterns = "/api/club/*")
-public class ClubServlet extends HttpServlet {
+@RestController
+@RequestMapping("/api/club")
+public class ClubController {
 
-    private final ClubService clubService = new ClubService();
+    @org.springframework.beans.factory.annotation.Autowired private ClubService clubService;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @GetMapping({"","/**"})
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length()));
         try {
             switch (path == null ? "" : path) {
                 case "/list" -> list(req, resp);
@@ -45,42 +48,48 @@ public class ClubServlet extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    
+    @PostMapping({"","/**"})
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+            if (!(req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())).isEmpty() && !"/".equals((req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())))) {
                 write(resp, ApiResponse.fail(404, "未知路径")); return;
             }
             Club c = readClub(req, false);
             Long id = clubService.create(c);
+            com.club.util.Beans.get(com.club.infra.HotCache.class).invalidate();
             write(resp, ApiResponse.ok(Map.of("id", id)));
         } catch (IllegalArgumentException e) {
             write(resp, ApiResponse.fail(400, e.getMessage()));
         }
     }
 
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    
+    @PutMapping({"","/**"})
+    public void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+            if (!(req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())).isEmpty() && !"/".equals((req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())))) {
                 write(resp, ApiResponse.fail(404, "未知路径")); return;
             }
             Club c = readClub(req, true);
             clubService.update(c);
+            com.club.util.Beans.get(com.club.infra.HotCache.class).invalidate();
             write(resp, ApiResponse.ok());
         } catch (IllegalArgumentException e) {
             write(resp, ApiResponse.fail(400, e.getMessage()));
         }
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    
+    @DeleteMapping({"","/**"})
+    public void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+            if (!(req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())).isEmpty() && !"/".equals((req.getRequestURI().substring(req.getContextPath().length()+"/api/club".length())))) {
                 write(resp, ApiResponse.fail(404, "未知路径")); return;
             }
             long id = RequestUtil.positiveId(req.getParameter("id"), "id");
             clubService.deactivate(id);
+            com.club.util.Beans.get(com.club.infra.HotCache.class).invalidate();
             write(resp, ApiResponse.ok());
         } catch (NumberFormatException e) {
             write(resp, ApiResponse.fail(400, "id 非法"));
@@ -97,7 +106,7 @@ public class ClubServlet extends HttpServlet {
         // 管理员能看到下架的，学生只能看在招的
         boolean onlyActive = currentRoleIsStudent(req);
         write(resp, ApiResponse.ok(
-                clubService.search(keyword, category, page, size, onlyActive)));
+                com.club.util.Beans.get(com.club.infra.HotCache.class).get("clubs:"+keyword+":"+category+":"+page+":"+size+":"+onlyActive,()->clubService.search(keyword, category, page, size, onlyActive))));
     }
 
     private Club readClub(HttpServletRequest req, boolean updating) throws IOException {
@@ -121,7 +130,7 @@ public class ClubServlet extends HttpServlet {
 
     private void detail(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         long id = RequestUtil.positiveId(req.getParameter("id"), "id");
-        write(resp, ApiResponse.ok(clubService.detail(id)));
+        write(resp, ApiResponse.ok(com.club.util.Beans.get(com.club.infra.HotCache.class).get("club:"+id,()->clubService.detail(id))));
     }
 
     private boolean currentRoleIsStudent(HttpServletRequest req) {

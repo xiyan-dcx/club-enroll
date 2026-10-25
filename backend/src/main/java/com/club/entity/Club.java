@@ -1,9 +1,12 @@
 package com.club.entity;
+import com.baomidou.mybatisplus.annotation.*;
 
 import java.time.LocalDateTime;
 
 //社团实体（对应 club 表）
+@TableName("club")
 public class Club {
+    @TableId(type=IdType.AUTO)
     private Long id;
     private String name;
     private String category;

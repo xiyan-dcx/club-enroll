@@ -8,7 +8,7 @@
       <div class="text-center mb-6">
         <div class="inline-flex items-center gap-2 mb-3">
           <div class="w-11 h-11 rounded-xl brand-hero flex items-center justify-center text-white font-bold shadow-lg">社</div>
-          <span class="text-xl font-semibold text-[var(--text-primary)]">校园社团报名通</span>
+          <span class="text-xl font-semibold text-[var(--text-primary)]">青聚 · 社团招新与活动预约</span>
         </div>
         <h2 class="text-3xl font-bold mb-1">创建新账号</h2>
         <p class="text-[var(--text-secondary)]">几分钟搞定,开启社团之旅 ✨</p>

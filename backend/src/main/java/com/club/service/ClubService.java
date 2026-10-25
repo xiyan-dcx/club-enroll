@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 //社团业务
+@org.springframework.stereotype.Service
 public class ClubService {
 
     private final ClubDao clubDao = new  ClubDao();

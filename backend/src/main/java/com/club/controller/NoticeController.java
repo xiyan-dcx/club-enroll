@@ -1,4 +1,5 @@
-package com.club.servlet;
+package com.club.controller;
+import org.springframework.web.bind.annotation.*;
 
 import com.club.entity.User;
 import com.club.service.NoticeService;
@@ -7,8 +8,8 @@ import com.club.util.JsonUtil;
 import com.club.util.RequestUtil;
 import com.google.gson.JsonObject;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
+
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -22,14 +23,16 @@ import java.util.Map;
  *   GET  /api/notice/list?clubId=  已登录均可
  *   POST /api/notice               管理员发布（路径无后缀，pathInfo 为 null）
  */
-@WebServlet(name = "NoticeServlet", urlPatterns = {"/api/notice", "/api/notice/*"})
-public class NoticeServlet extends HttpServlet {
+@RestController
+@RequestMapping("/api/notice")
+public class NoticeController {
 
-    private final NoticeService service = new NoticeService();
+    @org.springframework.beans.factory.annotation.Autowired private NoticeService service;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @GetMapping({"","/**"})
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/notice".length()));
         if (!"/list".equals(path)) {
             write(resp, ApiResponse.fail(404, "未知路径"));
             return;
@@ -39,11 +42,12 @@ public class NoticeServlet extends HttpServlet {
         write(resp, ApiResponse.ok(service.list(clubId)));
     }
 
-    @Override
+    
     @SuppressWarnings("unchecked")
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    @PostMapping({"","/**"})
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            if (req.getPathInfo() != null && !"/".equals(req.getPathInfo())) {
+            if (!(req.getRequestURI().substring(req.getContextPath().length()+"/api/notice".length())).isEmpty() && !"/".equals((req.getRequestURI().substring(req.getContextPath().length()+"/api/notice".length())))) {
                 write(resp, ApiResponse.fail(404, "未知路径")); return;
             }
             User me = currentUser(req);

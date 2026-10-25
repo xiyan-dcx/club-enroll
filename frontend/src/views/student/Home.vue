@@ -5,9 +5,10 @@
       <div class="max-w-6xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="w-9 h-9 rounded-xl brand-hero flex items-center justify-center text-white font-bold">社</div>
-          <span class="font-semibold text-lg">校园社团报名通</span>
+          <span class="font-semibold text-lg">青聚 · 社团招新与活动预约</span>
         </div>
         <div class="flex items-center gap-3">
+          <RouterLink to="/student/portal" class="text-sm font-medium">活动预约与管理</RouterLink>
           <button
             class="hidden sm:flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-medium text-[var(--text-primary)] hover:bg-[#FF6B6B]/10 transition-all"
             @click="router.push('/student/my-enrollment')"
@@ -87,7 +88,7 @@
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">
           热门社团
-          <span class="text-sm font-normal text-[var(--text-secondary)] ml-2">共 {{ total }} 个</span>
+          <span class="text-sm font-normal text-[var(--text-secondary)] ml-2">共 {{ total }} 个 · 按成员数排序</span>
         </h2>
       </div>
 

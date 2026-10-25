@@ -1,4 +1,5 @@
 package com.club.entity;
+import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
  * 用户实体（对应 user 表，含学生和管理员两种角色）。
  * 实现 Serializable 让 Tomcat 可以把 Session 序列化到磁盘做热重启。
  */
+@TableName("user")
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -15,6 +17,7 @@ public class User implements Serializable {
     public static final String ROLE_STUDENT = "student";
     public static final String ROLE_ADMIN = "admin";
 
+    @TableId(type=IdType.AUTO)
     private Long id;
     private String username;
     private String password;

@@ -1,4 +1,5 @@
-package com.club.servlet;
+package com.club.controller;
+import org.springframework.web.bind.annotation.*;
 
 import com.club.entity.User;
 import com.club.service.AuthService;
@@ -7,8 +8,8 @@ import com.club.util.JsonUtil;
 import com.club.util.RequestUtil;
 import com.google.gson.JsonObject;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
+
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -25,23 +26,26 @@ import java.util.Map;
  *   POST /api/auth/logout
  *   GET  /api/auth/me
  */
-@WebServlet(name = "AuthServlet", urlPatterns = "/api/auth/*")
-public class AuthServlet extends HttpServlet {
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
 
-    private final AuthService authService = new AuthService();
+    @org.springframework.beans.factory.annotation.Autowired private AuthService authService;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @GetMapping({"","/**"})
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/auth".length()));
         switch (path == null ? "" : path) {
             case "/me" -> me(req, resp);
             default -> write(resp, ApiResponse.fail(404, "未知路径：" + path));
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @PostMapping({"","/**"})
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/auth".length()));
         switch (path == null ? "" : path) {
             case "/register" -> register(req, resp);
             case "/login"    -> login(req, resp);

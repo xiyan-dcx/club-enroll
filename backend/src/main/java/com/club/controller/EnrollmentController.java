@@ -1,4 +1,5 @@
-package com.club.servlet;
+package com.club.controller;
+import org.springframework.web.bind.annotation.*;
 
 import com.club.entity.User;
 import com.club.service.EnrollmentService;
@@ -7,8 +8,8 @@ import com.club.util.JsonUtil;
 import com.club.util.RequestUtil;
 import com.google.gson.JsonObject;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
+
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -25,14 +26,16 @@ import java.util.Map;
  *   GET  /api/enrollment/pending  管理员看待审
  *   POST /api/enrollment/review   管理员审批
  */
-@WebServlet(name = "EnrollmentServlet", urlPatterns = "/api/enrollment/*")
-public class EnrollmentServlet extends HttpServlet {
+@RestController
+@RequestMapping("/api/enrollment")
+public class EnrollmentController {
 
-    private final EnrollmentService service = new EnrollmentService();
+    @org.springframework.beans.factory.annotation.Autowired private EnrollmentService service;
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @GetMapping({"","/**"})
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/enrollment".length()));
         try {
             switch (path == null ? "" : path) {
                 case "/mine" -> mine(req, resp);
@@ -44,9 +47,11 @@ public class EnrollmentServlet extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+    
+    @com.club.infra.RateLimit
+    @PostMapping({"","/**"})
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = (req.getRequestURI().substring(req.getContextPath().length()+"/api/enrollment".length()));
         try {
             switch (path == null ? "" : path) {
                 case "/apply" -> apply(req, resp);
@@ -64,7 +69,7 @@ public class EnrollmentServlet extends HttpServlet {
         JsonObject body = RequestUtil.body(req);
         Long clubId = RequestUtil.id(body, "clubId");
         String reason = RequestUtil.string(body, "reason");
-        Long id = service.apply(me.getId(), clubId, reason);
+        Long id = service.apply(me.getId(), clubId, reason, RequestUtil.string(body, "studentNo"), RequestUtil.string(body, "realName"));
         write(resp, ApiResponse.ok(Map.of("id", id)));
     }
 
@@ -87,6 +92,7 @@ public class EnrollmentServlet extends HttpServlet {
         String action = RequestUtil.string(body, "action");
         String remark = RequestUtil.string(body, "remark");
         service.review(id, action, remark, me.getId());
+        try{com.club.util.Beans.get(com.club.infra.HotCache.class).invalidate();}catch(Exception ignored){}
         write(resp, ApiResponse.ok());
     }
 

@@ -26,7 +26,7 @@
 		  {{ (row.studentName || 'S').charAt(0) }}
                 </div>		   
                 <div>
-                  <div class="font-semibold">{{ row.studentName }}</div>
+                  <div class="font-semibold">{{ row.studentName }}</div><div class="text-sm">学号：{{ row.studentNo || "—" }}</div>
                 </div>
 
 

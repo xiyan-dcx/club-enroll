@@ -115,6 +115,8 @@
         填写一段 10-200 字的报名理由,让社长看到你的特别之处 ✨
       </p>
       <el-form :model="applyForm" :rules="applyRules" ref="applyFormRef" label-position="top">
+        <el-form-item label="学号" prop="studentNo"><el-input v-model="applyForm.studentNo" maxlength="32" /></el-form-item>
+        <el-form-item label="姓名" prop="realName"><el-input v-model="applyForm.realName" maxlength="32" /></el-form-item>
         <el-form-item label="报名理由" prop="reason">
           <el-input
             v-model="applyForm.reason"
@@ -151,8 +153,10 @@ const loading = ref(false)
 
 const applyDialog = ref(false)
 const applyFormRef = ref(null)
-const applyForm = reactive({ reason: '' })
+const applyForm = reactive({ reason: '', studentNo: '', realName: '' })
 const applyRules = {
+  studentNo: [{ required: true, pattern: /^[A-Za-z0-9]{1,32}$/, message: '请填写 1—32 位字母或数字学号', trigger: 'blur' }],
+  realName: [{ required: true, whitespace: true, message: '请填写姓名', trigger: 'blur' }],
   reason: [
     { required: true, message: '请填写报名理由', trigger: 'blur' },
     { min: 10, max: 200, message: '10-200 字', trigger: 'blur' },
@@ -200,7 +204,7 @@ async function onSubmit() {
   if (!valid) return
   submitting.value = true
   try {
-    await api.post('/enrollment/apply', { clubId, reason: applyForm.reason })
+    await api.post('/enrollment/apply', { clubId, ...applyForm })
     ElMessage.success('报名成功,等待审批 🎉')
     applyDialog.value = false
     applyForm.reason = ''

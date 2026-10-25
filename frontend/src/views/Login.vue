@@ -10,7 +10,7 @@
       <div class="relative z-10 flex flex-col justify-between p-14 w-full">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-2xl bg-white/95 flex items-center justify-center text-[#FF6B6B] text-2xl font-bold shadow-lg">社</div>
-          <span class="text-xl font-semibold">校园社团报名通</span>
+          <span class="text-xl font-semibold">青聚 · 社团招新与活动预约</span>
         </div>
 
         <div class="space-y-6">
@@ -30,7 +30,7 @@
         </div>
 
         <div class="text-white/70 text-sm">
-          © 2026 校园社团报名通 · 让每一次相遇都不会错过
+          © 2026 青聚 · 社团招新与活动预约 · 让每一次相遇都不会错过
         </div>
       </div>
     </aside>
@@ -41,7 +41,7 @@
         <!-- 移动端 logo -->
         <div class="lg:hidden flex items-center justify-center gap-2 mb-8">
           <div class="w-10 h-10 rounded-xl brand-hero flex items-center justify-center text-white font-bold">社</div>
-          <span class="text-xl font-semibold text-[var(--text-primary)]">校园社团报名通</span>
+          <span class="text-xl font-semibold text-[var(--text-primary)]">青聚 · 社团招新与活动预约</span>
         </div>
 
         <div class="glass-card p-10">

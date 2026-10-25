@@ -23,3 +23,5 @@ Thumbs.db
 # 本地验证过程与日志
 .audit/
 backend/cookies.txt
+.test-runtime/
+.local/
